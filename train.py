@@ -30,7 +30,7 @@ def train(rank, args, shared_model, counter, lock, optimizer=None):
     state = env.reset()
     state = torch.from_numpy(state)
     done = True
-
+    rs = 0
     episode_length = 0
     while True:
         # Sync with the shared model
@@ -60,6 +60,7 @@ def train(rank, args, shared_model, counter, lock, optimizer=None):
             log_prob = log_prob.gather(1, action)
 
             state, reward, done, _ = env.step(action.numpy())
+            rs += reward
             done = done or episode_length >= args.max_episode_length
             reward = max(min(reward, 1), -1)
 
@@ -102,8 +103,13 @@ def train(rank, args, shared_model, counter, lock, optimizer=None):
 
         optimizer.zero_grad()
 
-        (policy_loss + args.value_loss_coef * value_loss).backward()
+        loss = policy_loss + cfg.value_loss_coef * value_loss
+        loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
 
         ensure_shared_grads(model, shared_model)
         optimizer.step()
+
+        if done:
+            print(f"rank {rank:2d},\t loss {loss.item():6.3f},\t rt {rs:5.0f},")
+            rs = 0

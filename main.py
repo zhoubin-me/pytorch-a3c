@@ -43,6 +43,7 @@ parser.add_argument('--no-shared', default=False,
 
 
 if __name__ == '__main__':
+    mp.set_start_method('spawn')
     os.environ['OMP_NUM_THREADS'] = '1'
     os.environ['CUDA_VISIBLE_DEVICES'] = ""
 
