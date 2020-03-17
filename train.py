@@ -103,7 +103,7 @@ def train(rank, args, shared_model, counter, lock, optimizer=None):
 
         optimizer.zero_grad()
 
-        loss = policy_loss + cfg.value_loss_coef * value_loss
+        loss = policy_loss + args.value_loss_coef * value_loss
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
 
